@@ -9,9 +9,12 @@
 #define USB_ACCESSORY_ADB_PRODUCT_ID 0x2D01
 #define ACCESSORY_STRING_MANUFACTURER 0
 #define ACCESSORY_STRING_MODEL 1
-#define ACCESSORY_STRING_TYPE 2
+#define ACCESSORY_STRING_DESCRIPTION 2
 #define ACCESSORY_STRING_VERSION 3
+#define ACCESSORY_STRING_URI 4
+#define ACCESSORY_STRING_SERIAL 5
 
+#define ACCESSORY_GET_PROTOCOL 51
 #define ACCESSORY_SEND_STRING 52
 #define ACCESSORY_START 53
 
@@ -140,6 +143,14 @@ bool isAccessoryDevice(USB_DEVICE_DESCRIPTOR *desc)
 	return desc->idProduct == 0x2D00 || desc->idProduct == 0x2D01;
 }
 
+int getProtocol(byte addr)
+{
+        uint16_t protocol = -1;
+        Usb.ctrlReq(addr, 0, USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE,
+		    ACCESSORY_GET_PROTOCOL, 0, 0, 0, 2, (char *)&protocol);
+        return protocol;
+}
+
 void sendString(byte addr, int index, char *str)
 {
 	Usb.ctrlReq(addr, 0, USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE,
@@ -147,15 +158,25 @@ void sendString(byte addr, int index, char *str)
 
 }
 
-void switchDevice(byte addr)
+bool switchDevice(byte addr)
 {
+        int protocol = getProtocol(addr);
+        if (protocol == 1)
+                Serial.print("device supports protcol 1\n");
+        else {
+                Serial.print("could not read device protocol version\n");
+                return false;
+        }
 	sendString(addr, ACCESSORY_STRING_MANUFACTURER, "Google, Inc.");
 	sendString(addr, ACCESSORY_STRING_MODEL, "DemoKit");
-	sendString(addr, ACCESSORY_STRING_TYPE, "Sample Program");
+	sendString(addr, ACCESSORY_STRING_DESCRIPTION, "DemoKit test board");
 	sendString(addr, ACCESSORY_STRING_VERSION, "1.0");
+	sendString(addr, ACCESSORY_STRING_URI, "http://www.android.com");
+	sendString(addr, ACCESSORY_STRING_SERIAL, "0000000012345678");
 
 	Usb.ctrlReq(addr, 0, USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE,
 		    ACCESSORY_START, 0, 0, 0, 0, NULL);
+        return true;
 }
 
 bool findEndpoints(byte addr, EP_RECORD *inEp, EP_RECORD *outEp)
