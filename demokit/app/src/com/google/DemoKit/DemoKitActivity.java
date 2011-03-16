@@ -72,8 +72,8 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
     ImageView mCap;
 
 
-    Drawable redball;
-    Drawable greenball;
+    Drawable mSwitchOff;
+    Drawable mSwitchOn;
 
     private static final int MESSAGE_SWITCH = 1;
     private static final int MESSAGE_TEMPERATURE = 2;
@@ -213,8 +213,8 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
 
         mCap = (ImageView)findViewById(R.id.cap);
 
-        redball =   getResources().getDrawable(R.drawable.redball);
-        greenball = getResources().getDrawable(R.drawable.greenball);
+        mSwitchOff =   getResources().getDrawable(R.drawable.droid_off);
+        mSwitchOn = getResources().getDrawable(R.drawable.droid_on);
 
     }
 
@@ -355,13 +355,13 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
                 case MESSAGE_SWITCH:
                     SwitchMsg o = (SwitchMsg)msg.obj;
                     if (o.getSw() == 0)
-                        mButton1Image.setImageDrawable(o.getState() != 0 ? greenball : redball);
+                        mButton1Image.setImageDrawable(o.getState() != 0 ? mSwitchOn : mSwitchOff);
                     else if (o.getSw() == 1)
-                        mButton2Image.setImageDrawable(o.getState() != 0 ? greenball : redball);
+                        mButton2Image.setImageDrawable(o.getState() != 0 ? mSwitchOn : mSwitchOff);
                     else if (o.getSw() == 2)
-                        mButton3Image.setImageDrawable(o.getState() != 0 ? greenball : redball);
+                        mButton3Image.setImageDrawable(o.getState() != 0 ? mSwitchOn : mSwitchOff);
                     else if (o.getSw() == 3)
-                        mCap.setImageDrawable(o.getState() != 0 ? greenball : redball);
+                        mCap.setImageDrawable(o.getState() != 0 ? mSwitchOn : mSwitchOff);
                     break;
 
                 case MESSAGE_TEMPERATURE:
