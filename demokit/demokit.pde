@@ -20,16 +20,16 @@
 
 
 #define  LED3_RED       2
-#define  LED3_GREEN     3
-#define  LED3_BLUE      4
+#define  LED3_GREEN     4
+#define  LED3_BLUE      3
 
 #define  LED2_RED       5
-#define  LED2_GREEN     6
-#define  LED2_BLUE      7
+#define  LED2_GREEN     7
+#define  LED2_BLUE      6
 
 #define  LED1_RED       8
-#define  LED1_GREEN     9
-#define  LED1_BLUE      10
+#define  LED1_GREEN     10
+#define  LED1_BLUE      9
 
 #define  SERVO1         11
 #define  SERVO2         12
