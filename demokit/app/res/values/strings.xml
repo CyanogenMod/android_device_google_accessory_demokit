@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hello">Hello World, DemoKitActivity!</string>
+    <string name="app_name">DemoKit</string>
+    <string name="button1">1</string>
+    <string name="button2">2</string>
+    <string name="button3">3</string>
+    <string name="led1Red">Led 1 Red</string>
+    <string name="led1Green">Led 1 Green</string>
+    <string name="led1Blue">Led 1 Blue</string>
+    <string name="led2Red">Led 2 Red</string>
+    <string name="led2Green">Led 2 Green</string>
+    <string name="led2Blue">Led 2 Blue</string>
+    <string name="led3Red">Led 3 Red</string>
+    <string name="led3Green">Led 3 Green</string>
+    <string name="led3Blue">Led 3 Blue</string>
+    <string name="relay1">1</string>
+    <string name="relay2">2</string>
+    <string name="temperature">Temperature</string>
+    <string name="light">Light</string>
+    <string name="buttons">Buttons</string>
+    <string name="relays">Relays</string>
+    <string name="led1">Led 1</string>
+    <string name="led2">Led 2</string>
+    <string name="led3">Led 3</string>
+    <string name="red">Red</string>
+    <string name="green">Green</string>
+    <string name="blue">Blue</string>
+    <string name="servos">Servos</string>
+    <string name="x">X</string>
+    <string name="y">Y</string>
+    <string name="joystick">Joystick</string>
+    <string name="cap">Cap Button</string>
+</resources>
