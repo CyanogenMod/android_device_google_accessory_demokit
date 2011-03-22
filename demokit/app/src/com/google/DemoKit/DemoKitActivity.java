@@ -401,6 +401,9 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
         };
 
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+        if (mOutputStream == null)
+            return;
+
         byte[] buffer = new byte[3];
         if (progress > 255)
             progress = 255;
@@ -451,6 +454,9 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
     }
 
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        if (mOutputStream == null)
+            return;
+
         byte[] buffer = new byte[3];
         buffer[0] = 0x3;
         buffer[1] = -1;
