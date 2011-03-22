@@ -1,23 +1,9 @@
-#include <Max3421e.h>
-#include <Usb.h>
 #include <Wire.h>
 #include <Servo.h>
 
-#define USB_ACCESSORY_VENDOR_ID 0x18D1
-#define USB_ACCESSORY_PRODUCT_ID 0x2D00
-
-#define USB_ACCESSORY_ADB_PRODUCT_ID 0x2D01
-#define ACCESSORY_STRING_MANUFACTURER 0
-#define ACCESSORY_STRING_MODEL 1
-#define ACCESSORY_STRING_DESCRIPTION 2
-#define ACCESSORY_STRING_VERSION 3
-#define ACCESSORY_STRING_URI 4
-#define ACCESSORY_STRING_SERIAL 5
-
-#define ACCESSORY_GET_PROTOCOL 51
-#define ACCESSORY_SEND_STRING 52
-#define ACCESSORY_START 53
-
+#include <Max3421e.h>
+#include <Usb.h>
+#include <AndroidAccessory.h>
 
 #define  LED3_RED       2
 #define  LED3_GREEN     4
@@ -51,17 +37,16 @@
 #define  JOY_nINT       A10     // active low interrupt input
 #define  JOY_nRESET     A11     // active low reset output
 
-
-MAX3421E Max;
-USB Usb;
+AndroidAccessory acc("Google, Inc.",
+		     "DemoKit",
+		     "DemoKit Arduino Board",
+		     "1.0",
+		     "http://www.android.com",
+		     "0000000012345678");
 Servo servos[3];
-
 
 void setup();
 void loop();
-
-uint8_t usbBuff[256];
-
 
 void init_buttons()
 {
@@ -111,6 +96,7 @@ void init_leds()
 
 void init_joystick( int threshold );
 
+byte b1, b2, b3, c;
 void setup()
 {
 	Serial.begin( 115200 );
@@ -129,324 +115,141 @@ void setup()
 	servos[2].attach(SERVO3);
 	servos[2].write(90);
 
-	Max.powerOn();
-	delay( 200 );
+
+	b1 = digitalRead(BUTTON1);
+	b2 = digitalRead(BUTTON2);
+	b3 = digitalRead(BUTTON3);
+	c = captouched();
+
+	acc.powerOn();
 }
-
-bool isAndroidVendor(USB_DEVICE_DESCRIPTOR *desc)
-{
-	return desc->idVendor == 0x18d1 || desc->idVendor == 0x22B8;
-}
-
-bool isAccessoryDevice(USB_DEVICE_DESCRIPTOR *desc)
-{
-	return desc->idProduct == 0x2D00 || desc->idProduct == 0x2D01;
-}
-
-int getProtocol(byte addr)
-{
-        uint16_t protocol = -1;
-        Usb.ctrlReq(addr, 0, USB_SETUP_DEVICE_TO_HOST | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE,
-		    ACCESSORY_GET_PROTOCOL, 0, 0, 0, 2, (char *)&protocol);
-        return protocol;
-}
-
-void sendString(byte addr, int index, char *str)
-{
-	Usb.ctrlReq(addr, 0, USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE,
-		    ACCESSORY_SEND_STRING, 0, 0, index, strlen(str) + 1, str);
-
-}
-
-bool switchDevice(byte addr)
-{
-        int protocol = getProtocol(addr);
-        if (protocol == 1)
-                Serial.print("device supports protcol 1\n");
-        else {
-                Serial.print("could not read device protocol version\n");
-                return false;
-        }
-	sendString(addr, ACCESSORY_STRING_MANUFACTURER, "Google, Inc.");
-	sendString(addr, ACCESSORY_STRING_MODEL, "DemoKit");
-	sendString(addr, ACCESSORY_STRING_DESCRIPTION, "DemoKit test board");
-	sendString(addr, ACCESSORY_STRING_VERSION, "1.0");
-	sendString(addr, ACCESSORY_STRING_URI, "http://www.android.com");
-	sendString(addr, ACCESSORY_STRING_SERIAL, "0000000012345678");
-
-	Usb.ctrlReq(addr, 0, USB_SETUP_HOST_TO_DEVICE | USB_SETUP_TYPE_VENDOR | USB_SETUP_RECIPIENT_DEVICE,
-		    ACCESSORY_START, 0, 0, 0, 0, NULL);
-        return true;
-}
-
-bool findEndpoints(byte addr, EP_RECORD *inEp, EP_RECORD *outEp)
-{
-	int len;
-	byte err;
-	uint8_t *p;
-
-	err = Usb.getConfDescr(addr, 0, 4, 0, (char *)usbBuff);
-	if (err) {
-		Serial.print("Can't get config descriptor length\n");
-		return false;
-	}
-
-	len = usbBuff[2] | ((int)usbBuff[3] << 8);
-	Serial.print("Config Desc Length: ");
-	Serial.println(len, DEC);
-	if (len > sizeof(usbBuff)) {
-		Serial.print("config descriptor too large\n");
-		/* might want to truncate here */
-		return false;
-	}
-
-	err = Usb.getConfDescr(addr, 0, len, 0, (char *)usbBuff);
-	if (err) {
-		Serial.print("Can't get config descriptor\n");
-		return false;
-	}
-
-	p = usbBuff;
-	inEp->epAddr = 0;
-	outEp->epAddr = 0;
-	while (p < (usbBuff + len)){
-		uint8_t descLen = p[0];
-		uint8_t descType = p[1];
-		USB_ENDPOINT_DESCRIPTOR *epDesc;
-		EP_RECORD *ep;
-
-		switch (descType) {
-		case USB_DESCRIPTOR_CONFIGURATION:
-			Serial.print("config desc\n");
-			break;
-
-		case USB_DESCRIPTOR_INTERFACE:
-			Serial.print("interface desc\n");
-			break;
-
-		case USB_DESCRIPTOR_ENDPOINT:
-			epDesc = (USB_ENDPOINT_DESCRIPTOR *)p;
-			if (!inEp->epAddr && (epDesc->bEndpointAddress & 0x80))
-				ep = inEp;
-			else if (!outEp->epAddr)
-				ep = outEp;
-			else
-				ep = NULL;
-
-			if (ep) {
-				ep->epAddr = epDesc->bEndpointAddress & 0x7f;
-				ep->Attr = epDesc->bmAttributes;
-				ep->MaxPktSize = epDesc->wMaxPacketSize;
-				ep->sndToggle = bmSNDTOG0;
-				ep->rcvToggle = bmRCVTOG0;
-			}
-			break;
-
-		default:
-			Serial.print("unkown desc type ");
-			Serial.println( descType, HEX);
-			break;
-		}
-
-		p += descLen;
-	}
-
-	return inEp->epAddr && outEp->epAddr;
-}
-
-EP_RECORD ep_record[ 8 ];  //endpoint record structure for the mouse
-
-
-void doAndroid(void)
-{
-	byte err;
-	byte idle;
-	byte b1, b2, b3, c;
-	EP_RECORD inEp, outEp;
-	byte count = 0;
-
-	if (findEndpoints(1, &inEp, &outEp)) {
-
-		ep_record[inEp.epAddr] = inEp;
-		if (outEp.epAddr != inEp.epAddr)
-			ep_record[outEp.epAddr] = outEp;
-
-		Serial.print("inEp: ");
-		Serial.println(inEp.epAddr, HEX);
-		Serial.print("outEp: ");
-		Serial.println(outEp.epAddr, HEX);
-
-		ep_record[0] = *(Usb.getDevTableEntry(0,0));
-		Usb.setDevTableEntry(1, ep_record);
-
-		err = Usb.setConf( 1, 0, 1 );
-		if (err)
-			Serial.print("Can't set config to 1\n");
-
-		Usb.setUsbTaskState( USB_STATE_RUNNING );
-
-		b1 = digitalRead(BUTTON1);
-		b2 = digitalRead(BUTTON2);
-		b3 = digitalRead(BUTTON3);
-		c = captouched();
-
-		while(1) {
-			int len = Usb.newInTransfer(1, inEp.epAddr, sizeof(usbBuff),
-						    (char *)usbBuff, 1);
-			int i;
-			byte b;
-			byte msg[3];
-			msg[0] = 0x1;
-
-			if (len > 0) {
-				// XXX: assumes only one command per packet
-				Serial.print(usbBuff[0], HEX);
-				Serial.print(":");
-				Serial.print(usbBuff[1], HEX);
-				Serial.print(":");
-				Serial.println(usbBuff[2], HEX);
-				if (usbBuff[0] == 0x2) {
-					if (usbBuff[1] == 0x0)
-						analogWrite( LED1_RED, 255 - usbBuff[2]);
-					else if (usbBuff[1] == 0x1)
-						analogWrite( LED1_GREEN, 255 - usbBuff[2]);
-					else if (usbBuff[1] == 0x2)
-						analogWrite( LED1_BLUE, 255 - usbBuff[2]);
-					else if (usbBuff[1] == 0x3)
-						analogWrite( LED2_RED, 255 - usbBuff[2]);
-					else if (usbBuff[1] == 0x4)
-						analogWrite( LED2_GREEN, 255 - usbBuff[2]);
-					else if (usbBuff[1] == 0x5)
-						analogWrite( LED2_BLUE, 255 - usbBuff[2]);
-					else if (usbBuff[1] == 0x6)
-						analogWrite( LED3_RED, 255 - usbBuff[2]);
-					else if (usbBuff[1] == 0x7)
-						analogWrite( LED3_GREEN, 255 - usbBuff[2]);
-					else if (usbBuff[1] == 0x8)
-						analogWrite( LED3_BLUE, 255 - usbBuff[2]);
-					else if (usbBuff[1] == 0x10)
-						servos[0].write(map(usbBuff[2], 0, 255, 0, 180));
-					else if (usbBuff[1] == 0x11)
-						servos[1].write(map(usbBuff[2], 0, 255, 0, 180));
-					else if (usbBuff[1] == 0x12)
-						servos[2].write(map(usbBuff[2], 0, 255, 0, 180));
-				} else if (usbBuff[0] == 0x3) {
-					if (usbBuff[1] == 0x0)
-						digitalWrite( RELAY1, usbBuff[2] ? HIGH : LOW );
-					else if (usbBuff[1] == 0x1)
-						digitalWrite( RELAY2, usbBuff[2] ? HIGH : LOW );
-
-				}
-
-//				for (i = 0; i < len; i++)
-//				Serial.print('\n');
-			}
-
-			b = digitalRead(BUTTON1);
-			if (b != b1) {
-				msg[1] = 0;
-				msg[2] = b ? 0 : 1;
-				Usb.outTransfer(1, outEp.epAddr, 3, (char *)msg);
-				b1 = b;
-			}
-
-			b = digitalRead(BUTTON2);
-			if (b != b2) {
-				msg[1] = 1;
-				msg[2] = b ? 0 : 1;
-				Usb.outTransfer(1, outEp.epAddr, 3, (char *)msg);
-				b2 = b;
-			}
-
-			b = digitalRead(BUTTON3);
-			if (b != b3) {
-				msg[1] = 2;
-				msg[2] = b ? 0 : 1;
-				Usb.outTransfer(1, outEp.epAddr, 3, (char *)msg);
-				b3 = b;
-			}
-
-			if ((count++ % 16) == 0) {
-				uint16_t val;
-				int x, y;
-
-				val = analogRead(TEMP_SENSOR);
-				msg[0] = 0x4;
-				msg[1] = val >> 8;
-				msg[2] = val & 0xff;
-				Usb.outTransfer(1, outEp.epAddr, 3, (char *)msg);
-
-				val = analogRead(LIGHT_SENSOR);
-				msg[0] = 0x5;
-				msg[1] = val >> 8;
-				msg[2] = val & 0xff;
-				Usb.outTransfer(1, outEp.epAddr, 3, (char *)msg);
-
-				read_joystick(&x, &y);
-				msg[0] = 0x6;
-				msg[1] = constrain(x, -128, 127);
-				msg[2] = constrain(y, -128, 127);
-				Usb.outTransfer(1, outEp.epAddr, 3, (char *)msg);
-
-				char c0 = captouched();
-				if (c0 != c) {
-					msg[0] = 0x1;
-					msg[1] = 3;
-					msg[2] = c0 ? 0 : 1;
-					Usb.outTransfer(1, outEp.epAddr, 3, (char *)msg);
-					c = c0;
-				}
-			}
-
-			delay(10);
-
-		}
-
-	}
-
-}
-
 
 void loop()
 {
-	USB_DEVICE_DESCRIPTOR *devDesc = (USB_DEVICE_DESCRIPTOR *) usbBuff;
 	byte err;
+	byte idle;
+	static byte count = 0;
+	byte msg[3];
 
-	Max.Task();
-	Usb.Task();
-	if( Usb.getUsbTaskState() >= USB_STATE_CONFIGURING ) {
-		Serial.print("\nDevice addressed... ");
-		Serial.print("Requesting device descriptor.");
+	if (acc.isConnected()) {
+		int len = acc.read(msg, sizeof(msg), 1);
+		int i;
+		byte b;
+		uint16_t val;
+		int x, y;
+		char c0;
 
-		err = Usb.getDevDescr(1, 0, 0x12, (char *) devDesc);
-		if (err) {
-			Serial.print("\nDevice descriptor cannot be retrieved. Program Halted\n");
-			while(1);
-		}
+		if (len > 0) {
+			// XXX: assumes only one command per packet
+			Serial.print(msg[0], HEX);
+			Serial.print(":");
+			Serial.print(msg[1], HEX);
+			Serial.print(":");
+			Serial.println(msg[2], HEX);
+			if (msg[0] == 0x2) {
+				if (msg[1] == 0x0)
+					analogWrite( LED1_RED, 255 - msg[2]);
+				else if (msg[1] == 0x1)
+					analogWrite( LED1_GREEN, 255 - msg[2]);
+				else if (msg[1] == 0x2)
+					analogWrite( LED1_BLUE, 255 - msg[2]);
+				else if (msg[1] == 0x3)
+					analogWrite( LED2_RED, 255 - msg[2]);
+				else if (msg[1] == 0x4)
+					analogWrite( LED2_GREEN, 255 - msg[2]);
+				else if (msg[1] == 0x5)
+					analogWrite( LED2_BLUE, 255 - msg[2]);
+				else if (msg[1] == 0x6)
+					analogWrite( LED3_RED, 255 - msg[2]);
+				else if (msg[1] == 0x7)
+					analogWrite( LED3_GREEN, 255 - msg[2]);
+				else if (msg[1] == 0x8)
+					analogWrite( LED3_BLUE, 255 - msg[2]);
+				else if (msg[1] == 0x10)
+					servos[0].write(map(msg[2], 0, 255, 0, 180));
+				else if (msg[1] == 0x11)
+					servos[1].write(map(msg[2], 0, 255, 0, 180));
+				else if (msg[1] == 0x12)
+					servos[2].write(map(msg[2], 0, 255, 0, 180));
+			} else if (msg[0] == 0x3) {
+				if (msg[1] == 0x0)
+					digitalWrite( RELAY1, msg[2] ? HIGH : LOW );
+				else if (msg[1] == 0x1)
+					digitalWrite( RELAY2, msg[2] ? HIGH : LOW );
 
-		if (isAndroidVendor(devDesc)) {
-			Serial.print("found android device\n");
-
-			if (isAccessoryDevice(devDesc)) {
-				Serial.print("found android acessory device\n");
-				doAndroid();
-			} else {
-				Serial.print("found possible device. swithcing to serial mode\n");
-				switchDevice(1);
 			}
-		}
-
-		while (Usb.getUsbTaskState() != USB_DETACHED_SUBSTATE_WAIT_FOR_DEVICE) {
-			Max.Task();
-			Usb.Task();
-
 
 		}
 
-		Serial.print("detached\n");
+		msg[0] = 0x1;
 
+		b = digitalRead(BUTTON1);
+		if (b != b1) {
+			msg[1] = 0;
+			msg[2] = b ? 0 : 1;
+			acc.write(msg, 3);
+			b1 = b;
+		}
+
+		b = digitalRead(BUTTON2);
+		if (b != b2) {
+			msg[1] = 1;
+			msg[2] = b ? 0 : 1;
+			acc.write(msg, 3);
+			b2 = b;
+		}
+
+		b = digitalRead(BUTTON3);
+		if (b != b3) {
+			msg[1] = 2;
+			msg[2] = b ? 0 : 1;
+			acc.write(msg, 3);
+			b3 = b;
+		}
+
+		switch (count++ % 0x10) {
+
+		case 0:
+			val = analogRead(TEMP_SENSOR);
+			msg[0] = 0x4;
+			msg[1] = val >> 8;
+			msg[2] = val & 0xff;
+			acc.write(msg, 3);
+			break;
+
+		case 0x4:
+			val = analogRead(LIGHT_SENSOR);
+			msg[0] = 0x5;
+			msg[1] = val >> 8;
+			msg[2] = val & 0xff;
+			acc.write(msg, 3);
+			break;
+
+		case 0x8:
+			read_joystick(&x, &y);
+			msg[0] = 0x6;
+			msg[1] = constrain(x, -128, 127);
+			msg[2] = constrain(y, -128, 127);
+			acc.write(msg, 3);
+			break;
+
+#if 0
+			/* captoutched needs to be asynchonous */
+		case 0xc:
+			c0 = captouched();
+			if (c0 != c) {
+				msg[0] = 0x1;
+				msg[1] = 3;
+				msg[2] = c0 ? 0 : 1;
+				acc.write(msg, 3);
+				c = c0;
+			}
+			break;
+#endif
+		}
 	}
 
+	delay(10);
 }
 
 // ==============================================================================
