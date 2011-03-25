@@ -54,6 +54,7 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
     private PendingIntent mPermissionIntent;
     private boolean mPermissionRequestPending;
 
+    UsbAccessory mAccessory;
     ParcelFileDescriptor mFileDescriptor;
     FileInputStream mInputStream;
     FileOutputStream mOutputStream;
@@ -158,7 +159,8 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
    private final BroadcastReceiver mUsbReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (ACTION_USB_PERMISSION.equals(intent.getAction())) {
+            String action = intent.getAction();
+            if (ACTION_USB_PERMISSION.equals(action)) {
                 synchronized (this) {
                     UsbAccessory accessory = UsbManager.getAccessory(intent);
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
@@ -167,6 +169,11 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
                         Log.d(TAG, "permission denied for accessory " + accessory);
                     }
                     mPermissionRequestPending = false;
+                }
+            } else if (UsbManager.ACTION_USB_ACCESSORY_DETACHED.equals(action)) {
+                UsbAccessory accessory = UsbManager.getAccessory(intent);
+                if (accessory != null && accessory.equals(mAccessory)) {
+                    closeAccessory();
                 }
             }
         }
@@ -180,6 +187,7 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
         mUsbManager = UsbManager.getInstance(this);
         mPermissionIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
         IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+        filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
         registerReceiver(mUsbReceiver, filter);
 
         setContentView(R.layout.main);
@@ -229,9 +237,10 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
 
         mCap = (ImageView)findViewById(R.id.cap);
 
-        mSwitchOff =   getResources().getDrawable(R.drawable.droid_off);
+        mSwitchOff = getResources().getDrawable(R.drawable.droid_off);
         mSwitchOn = getResources().getDrawable(R.drawable.droid_on);
 
+        enableControls(false);
     }
 
     @Override
@@ -261,14 +270,7 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
     @Override
     public void onPause() {
         super.onPause();
-        if (mFileDescriptor != null) {
-            try {
-                mFileDescriptor.close();
-            } catch (IOException e) {
-            } finally {
-                mFileDescriptor = null;
-            }
-        }
+        closeAccessory();
     }
 
     @Override
@@ -281,15 +283,71 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
         Log.d(TAG, "openAccessory: " + accessory);
         mFileDescriptor = mUsbManager.openAccessory(accessory);
         if (mFileDescriptor != null) {
+            mAccessory = accessory;
             FileDescriptor fd = mFileDescriptor.getFileDescriptor();
             mInputStream = new FileInputStream(fd);
             mOutputStream = new FileOutputStream(fd);
             Thread thread = new Thread(null, this, "AccessoryChat");
             thread.start();
             Log.d(TAG, "openAccessory succeeded");
+            enableControls(true);
         } else {
             Log.d(TAG, "openAccessory fail");
         }
+    }
+
+    private void closeAccessory() {
+        enableControls(false);
+
+        mButton1Image.setImageDrawable(mSwitchOff);
+        mButton2Image.setImageDrawable(mSwitchOff);
+        mButton3Image.setImageDrawable(mSwitchOff);
+        mCap.setImageDrawable(mSwitchOff);
+        mLed1Red.setProgress(0);
+        mLed1Green.setProgress(0);
+        mLed1Blue.setProgress(0);
+        mLed2Red.setProgress(0);
+        mLed2Green.setProgress(0);
+        mLed2Blue.setProgress(0);
+        mLed3Red.setProgress(0);
+        mLed3Green.setProgress(0);
+        mLed3Blue.setProgress(0);
+        mServo1.setProgress(0);
+        mServo2.setProgress(0);
+        mServo3.setProgress(0);
+        mTemperature.setText("");
+        mLight.setText("");
+        mJoyX.setText("");
+        mJoyY.setText("");
+        mRelay1Button.setChecked(false);
+        mRelay2Button.setChecked(false);
+
+        try {
+            if (mFileDescriptor != null) {
+                mFileDescriptor.close();
+            }
+        } catch (IOException e) {
+        } finally {
+            mFileDescriptor = null;
+            mAccessory = null;
+        }
+    }
+
+    private void enableControls(boolean enable) {
+        mLed1Red.setEnabled(enable);
+        mLed1Green.setEnabled(enable);
+        mLed1Blue.setEnabled(enable);
+        mLed2Red.setEnabled(enable);
+        mLed2Green.setEnabled(enable);
+        mLed2Blue.setEnabled(enable);
+        mLed3Red.setEnabled(enable);
+        mLed3Green.setEnabled(enable);
+        mLed3Blue.setEnabled(enable);
+        mServo1.setEnabled(enable);
+        mServo2.setEnabled(enable);
+        mServo3.setEnabled(enable);
+        mRelay1Button.setEnabled(enable);
+        mRelay2Button.setEnabled(enable);
     }
 
     private int composeInt(byte hi, byte lo) {
@@ -401,9 +459,6 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
         };
 
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        if (mOutputStream == null)
-            return;
-
         byte[] buffer = new byte[3];
         if (progress > 255)
             progress = 255;
@@ -454,9 +509,6 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
     }
 
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-        if (mOutputStream == null)
-            return;
-
         byte[] buffer = new byte[3];
         buffer[0] = 0x3;
         buffer[1] = -1;

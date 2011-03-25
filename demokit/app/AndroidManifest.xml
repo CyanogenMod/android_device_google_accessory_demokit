@@ -19,7 +19,7 @@
       android:versionCode="1"
       android:versionName="1.0">
 
-  <uses-sdk android:targetSdkVersion="11"></uses-sdk>
+  <uses-sdk android:targetSdkVersion="11" />
 
     <application android:label="DemoKit"
             android:icon="@drawable/icon"
@@ -32,15 +32,19 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
 
-	    <intent-filter>
+        <!-- This activity receives USB_ACCESSORY_ATTACHED Intents and springboards to main Gallery activity. -->
+        <activity android:name="UsbAccessoryActivity" android:label="DemoKit"
+                android:taskAffinity=""
+                android:launchMode="singleInstance">
+            <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
             </intent-filter>
 
             <meta-data android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
                 android:resource="@xml/accessory_filter" />
-
-
         </activity>
+
     </application>
 </manifest>
