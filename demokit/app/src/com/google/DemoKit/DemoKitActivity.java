@@ -190,6 +190,11 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
         filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
         registerReceiver(mUsbReceiver, filter);
 
+        if (getLastNonConfigurationInstance() != null) {
+            mAccessory = (UsbAccessory) getLastNonConfigurationInstance();
+            openAccessory(mAccessory);
+        }
+
         setContentView(R.layout.main);
 
         mButton1Image = (ImageView)findViewById(R.id.button1Image);
@@ -244,11 +249,24 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
     }
 
     @Override
+	public Object onRetainNonConfigurationInstance() {
+		if (mAccessory != null) {
+			return mAccessory;
+		} else {
+			return super.onRetainNonConfigurationInstance();
+		}
+	}
+
+	@Override
     public void onResume() {
         super.onResume();
 
         Intent intent = getIntent();
         Log.d(TAG, "intent: " + intent);
+        if (mInputStream != null && mOutputStream != null) {
+            return;
+        }
+
         UsbAccessory[] accessories = mUsbManager.getAccessoryList();
         UsbAccessory accessory = (accessories == null ? null : accessories[0]);
         if (accessory != null) {
@@ -492,7 +510,7 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
         else if (seekBar == mServo3)
             buffer[1] = 0x12;
 
-        if (buffer[1] != -1) {
+        if (mOutputStream != null && buffer[1] != -1) {
             try {
                 mOutputStream.write(buffer);
             } catch (IOException e) {
