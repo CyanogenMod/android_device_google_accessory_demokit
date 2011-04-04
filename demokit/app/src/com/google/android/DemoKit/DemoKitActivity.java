@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.DemoKit;
+package com.google.android.DemoKit;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -48,7 +48,7 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
     private static final String TAG = "DemoKit";
 
     private static final String ACTION_USB_PERMISSION =
-            "com.google.DemoKit.action.USB_PERMISSION";
+            "com.google.android.DemoKit.action.USB_PERMISSION";
 
     private UsbManager mUsbManager;
     private PendingIntent mPermissionIntent;
