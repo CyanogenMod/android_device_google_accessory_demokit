@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.DemoKit;
+package com.google.android.DemoKit;
 
 
 import android.app.Activity;

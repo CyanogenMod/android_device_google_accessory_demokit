@@ -15,7 +15,7 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-      package="com.google.DemoKit"
+      package="com.google.android.DemoKit"
       android:versionCode="1"
       android:versionName="1.0">
 
