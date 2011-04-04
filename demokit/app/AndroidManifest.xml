@@ -25,6 +25,8 @@
             android:icon="@drawable/icon"
             android:hardwareAccelerated="true">
         <uses-library android:name="com.android.future.usb.accessory" />
+	<uses-sdk android:minSdkVersion="10" />
+
 
         <activity android:name="DemoKitActivity"
                   android:label="DemoKit">
