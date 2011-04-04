@@ -85,6 +85,8 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
 
     TextView mJoyX;
     TextView mJoyY;
+    ImageView mJoyButtonImage;
+
 
     ImageView mCap;
 
@@ -239,6 +241,7 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
 
         mJoyX = (TextView)findViewById(R.id.joyX);
         mJoyY = (TextView)findViewById(R.id.joyY);
+        mJoyButtonImage = (ImageView)findViewById(R.id.joyButtonImage);
 
         mCap = (ImageView)findViewById(R.id.cap);
 
@@ -320,6 +323,7 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
         mButton1Image.setImageDrawable(mSwitchOff);
         mButton2Image.setImageDrawable(mSwitchOff);
         mButton3Image.setImageDrawable(mSwitchOff);
+        mJoyButtonImage.setImageDrawable(mSwitchOff);
         mCap.setImageDrawable(mSwitchOff);
         mLed1Red.setProgress(0);
         mLed1Green.setProgress(0);
@@ -454,6 +458,8 @@ public class DemoKitActivity extends Activity implements Runnable, SeekBar.OnSee
                         mButton3Image.setImageDrawable(o.getState() != 0 ? mSwitchOn : mSwitchOff);
                     else if (o.getSw() == 3)
                         mCap.setImageDrawable(o.getState() != 0 ? mSwitchOn : mSwitchOff);
+                    else if (o.getSw() == 4)
+                        mJoyButtonImage.setImageDrawable(o.getState() != 0 ? mSwitchOn : mSwitchOff);
                     break;
 
                 case MESSAGE_TEMPERATURE:
