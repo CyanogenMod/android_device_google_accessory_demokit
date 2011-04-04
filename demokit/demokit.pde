@@ -5,6 +5,8 @@
 #include <Usb.h>
 #include <AndroidAccessory.h>
 
+#include <CapSense.h>
+
 #define  LED3_RED       2
 #define  LED3_GREEN     4
 #define  LED3_BLUE      3
@@ -21,7 +23,8 @@
 #define  SERVO2         12
 #define  SERVO3         13
 
-#define  TOUCH          14
+#define  TOUCH_RECV     14
+#define  TOUCH_SEND     15
 
 #define  RELAY1         A0
 #define  RELAY2         A1
@@ -44,6 +47,8 @@ AndroidAccessory acc("Google, Inc.",
 		     "http://www.android.com",
 		     "0000000012345678");
 Servo servos[3];
+
+CapSense   touch_robot = CapSense(TOUCH_SEND, TOUCH_RECV);        // 10M ohm resistor on demo shield
 
 void setup();
 void loop();
@@ -107,6 +112,7 @@ void setup()
 	init_buttons();
 	init_joystick( 5 );      // initialize with thresholding enabled, dead zone of 5 units  
 
+	touch_robot.set_CS_AutocaL_Millis(0xFFFFFFFF);    // autocalibrate OFF
 
 	servos[0].attach(SERVO1);
 	servos[0].write(90);
@@ -119,7 +125,7 @@ void setup()
 	b1 = digitalRead(BUTTON1);
 	b2 = digitalRead(BUTTON2);
 	b3 = digitalRead(BUTTON3);
-	c = captouched();
+	c = 0;
 
 	acc.powerOn();
 }
@@ -130,6 +136,7 @@ void loop()
 	byte idle;
 	static byte count = 0;
 	byte msg[3];
+	long touchcount;
 
 	if (acc.isConnected()) {
 		int len = acc.read(msg, sizeof(msg), 1);
@@ -233,19 +240,21 @@ void loop()
 			acc.write(msg, 3);
 			break;
 
-#if 0
 			/* captoutched needs to be asynchonous */
 		case 0xc:
-			c0 = captouched();
+			touchcount = touch_robot.capSense(5);
+
+			c0 = touchcount > 750;
+
 			if (c0 != c) {
 				msg[0] = 0x1;
 				msg[1] = 3;
-				msg[2] = c0 ? 0 : 1;
+				msg[2] = c0;
 				acc.write(msg, 3);
 				c = c0;
 			}
+
 			break;
-#endif
 		}
 	}
 
@@ -375,31 +384,4 @@ void write_joy_reg( char reg_addr, char val )
   Wire.send( reg_addr );
   Wire.send( val );
   Wire.endTransmission();  
-}
-
-/* Capacitive touch technique from Mario Becker, Fraunhofer IGD, 2007 http://www.igd.fhg.de/igd-a4 */
-
-char captouched() 
-{
-  char iii, jjj, retval;
-  
-  retval = 0;
-  
-  for( jjj = 0; jjj != 10; jjj++ ) {
-    delay( 10 );
-  
-    pinMode( TOUCH, INPUT );
-    digitalWrite( TOUCH, HIGH );
-  
-    for ( iii = 0; iii <  16; iii++ )
-      if( digitalRead( TOUCH ) )
-        break;
-      
-    digitalWrite( TOUCH, LOW );
-    pinMode( TOUCH, OUTPUT );
-  
-    retval += iii;
-  }
-  
-  return retval;
 }
