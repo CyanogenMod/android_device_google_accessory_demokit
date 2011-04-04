@@ -81,7 +81,7 @@
         </TableRow>
         <TableRow android:layout_width="match_parent" android:id="@+id/tableRow9" android:layout_height="wrap_content">
             <TextView android:id="@+id/textView11" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_vertical" android:text="@string/cap"></TextView>
-            <ImageView android:layout_height="wrap_content" android:layout_width="wrap_content" android:layout_gravity="left" android:src="@drawable/redball" android:id="@+id/cap"></ImageView>
+            <ImageView android:layout_height="wrap_content" android:layout_width="wrap_content" android:layout_gravity="left" android:src="@drawable/droid_off" android:id="@+id/cap"></ImageView>
         </TableRow>
     </TableLayout>
 
