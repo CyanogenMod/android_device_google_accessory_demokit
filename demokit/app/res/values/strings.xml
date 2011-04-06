@@ -32,4 +32,7 @@
     <string name="y">Y</string>
     <string name="joystick">Joystick</string>
     <string name="cap">Cap Button</string>
+    <string name="servo1">1</string>
+    <string name="servo2">2</string>
+    <string name="servo3">3</string>
 </resources>
