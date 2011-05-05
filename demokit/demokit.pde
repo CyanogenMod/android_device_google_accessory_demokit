@@ -267,6 +267,22 @@ void loop()
 
 			break;
 		}
+	} else {
+		analogWrite(LED1_RED, 255);
+		analogWrite(LED1_GREEN, 255);
+		analogWrite(LED1_BLUE, 255);
+		analogWrite(LED2_RED, 255);
+		analogWrite(LED2_GREEN, 255);
+		analogWrite(LED2_BLUE, 255);
+		analogWrite(LED3_RED, 255);
+		analogWrite(LED3_GREEN, 255);
+		analogWrite(LED3_BLUE, 255);
+		servos[0].write(90);
+		servos[0].write(90);
+		servos[0].write(90);
+		digitalWrite(RELAY1, LOW);
+		digitalWrite(RELAY2, LOW);
+
 	}
 
 	delay(10);
