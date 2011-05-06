@@ -180,7 +180,6 @@ public class DemoKitActivity extends Activity implements Runnable {
 		super.onResume();
 
 		Intent intent = getIntent();
-		Log.d(TAG, "intent: " + intent);
 		if (mInputStream != null && mOutputStream != null) {
 			return;
 		}
@@ -217,19 +216,18 @@ public class DemoKitActivity extends Activity implements Runnable {
 	}
 
 	private void openAccessory(UsbAccessory accessory) {
-		Log.d(TAG, "openAccessory: " + accessory);
 		mFileDescriptor = mUsbManager.openAccessory(accessory);
 		if (mFileDescriptor != null) {
 			mAccessory = accessory;
 			FileDescriptor fd = mFileDescriptor.getFileDescriptor();
 			mInputStream = new FileInputStream(fd);
 			mOutputStream = new FileOutputStream(fd);
-			Thread thread = new Thread(null, this, "AccessoryChat");
+			Thread thread = new Thread(null, this, "DemoKit");
 			thread.start();
-			Log.d(TAG, "openAccessory succeeded");
+			Log.d(TAG, "accessory opened");
 			enableControls(true);
 		} else {
-			Log.d(TAG, "openAccessory fail");
+			Log.d(TAG, "accessory open fail");
 		}
 	}
 
@@ -269,7 +267,6 @@ public class DemoKitActivity extends Activity implements Runnable {
 				break;
 			}
 
-			Log.d(TAG, "got bytes " + ret);
 			i = 0;
 			while (i < ret) {
 				int len = ret - i;
@@ -322,7 +319,6 @@ public class DemoKitActivity extends Activity implements Runnable {
 			}
 
 		}
-		Log.d(TAG, "thread out");
 	}
 
 	Handler mHandler = new Handler() {
