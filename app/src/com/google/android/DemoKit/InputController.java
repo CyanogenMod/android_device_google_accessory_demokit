@@ -15,7 +15,7 @@ public class InputController extends AccessoryController {
 	ArrayList<SwitchDisplayer> mSwitchDisplayers;
 	private final DecimalFormat mLightValueFormatter = new DecimalFormat("##.#");
 	private final DecimalFormat mTemperatureFormatter = new DecimalFormat(
-			"###¼");
+			"###" + (char)0x00B0);
 
 	InputController(DemoKitActivity hostActivity) {
 		super(hostActivity);
@@ -44,10 +44,10 @@ public class InputController extends AccessoryController {
 		double voltagemv = temperatureFromArduino * 4.9;
 		/*
 		 * The change in voltage is scaled to a temperature coefficient of 10.0
-		 * mV/¡C (typical) for the MCP9700/9700A and 19.5 mV/¡C (typical) for
-		 * the MCP9701/9701A. The out- put voltage at 0¡C is also scaled to 500
-		 * mV (typical) and 400 mV (typical) for the MCP9700/9700A and
-		 * MCP9701/9701A, respectively. VOUT = TC¥TA+V0¡C
+		 * mV/degC (typical) for the MCP9700/9700A and 19.5 mV/degC (typical)
+         * for the MCP9701/9701A. The out- put voltage at 0 degC is also scaled
+         * to 500 mV (typical) and 400 mV (typical) for the MCP9700/9700A and
+		 * MCP9701/9701A, respectively. VOUT = TC¥TA+V0degC
 		 */
 		double kVoltageAtZeroCmv = 400;
 		double kTemperatureCoefficientmvperC = 19.5;
