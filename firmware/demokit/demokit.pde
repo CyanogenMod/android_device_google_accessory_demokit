@@ -374,13 +374,13 @@ char read_joy_reg(char reg_addr)
 	char c;
 
 	Wire.beginTransmission(JOY_I2C_ADDR);
-	Wire.send(reg_addr);
+	Wire.write(reg_addr);
 	Wire.endTransmission();
 
 	Wire.requestFrom(JOY_I2C_ADDR, 1);
 
 	while(Wire.available())
-		c = Wire.receive();
+		c = Wire.read();
 
 	return c;
 }
@@ -388,7 +388,7 @@ char read_joy_reg(char reg_addr)
 void write_joy_reg(char reg_addr, char val)
 {
 	Wire.beginTransmission(JOY_I2C_ADDR);
-	Wire.send(reg_addr);
-	Wire.send(val);
+	Wire.write(reg_addr);
+	Wire.write(val);
 	Wire.endTransmission();
 }
